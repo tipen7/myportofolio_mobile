@@ -1,38 +1,74 @@
 import 'package:flutter/material.dart';
 
-class MyHomePage extends StatelessWidget {
-  MyHomePage({super.key});
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
 
-  final String npm = "2406000001";
-  final String nama = "Burhan";
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  final String npm = "2506616112";
+  final String nama = "Steven";
   final String kelas = "PBP A";
 
-  final List<ItemHomepage> items = [
-    ItemHomepage("Lihat Proyek", Icons.folder),
-    ItemHomepage("Tambah Proyek", Icons.add_circle),
-    ItemHomepage("Logout", Icons.logout),
+  // Setiap tombol memiliki warna unik: biru, hijau, dan merah.
+  final List<ItemHomepage> items = const [
+    ItemHomepage("Lihat Proyek", Icons.folder, Colors.blue),
+    ItemHomepage("Tambah Proyek", Icons.add_circle, Colors.green),
+    ItemHomepage("Logout", Icons.logout, Colors.red),
   ];
 
-  @override
+  // Interaktivitas tambahan: hitung total tekan & simpan tombol terakhir.
+  int _totalTaps = 0;
+  String? _lastPressed;
+
+  void _onItemTap(ItemHomepage item) {
+    setState(() {
+      _totalTaps++;
+      _lastPressed = item.name;
+    });
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: item.color,
+          behavior: SnackBarBehavior.floating,
+          content: Text("Kamu telah menekan tombol ${item.name}!"),
+        ),
+      );
+  }
+
+  void _resetCounter() {
+    setState(() {
+      _totalTaps = 0;
+      _lastPressed = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Scaffold menyediakan struktur visual dasar halaman (AppBar, Body, SnackBar).
     return Scaffold(
-      // AppBar menampilkan bar bagian atas halaman aplikasi.
       appBar: AppBar(
         title: const Text(
           'MyPortfolio',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          IconButton(
+            tooltip: 'Reset penghitung',
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _resetCounter,
+          ),
+        ],
       ),
-      // Body halaman utama dengan padding di sekelilingnya.
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Baris horizontal untuk menampilkan 3 InfoCard secara sejajar.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -41,40 +77,27 @@ class MyHomePage extends StatelessWidget {
                 InfoCard(title: 'Class', content: kelas),
               ],
             ),
-
             const SizedBox(height: 16.0),
-
-            // Bagian tengah: pesan sambutan dan kisi tombol menu portofolio.
-            Center(
-              child: Column(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 16.0),
-                    child: Text(
-                      'Selamat datang di MyPortfolio Mobile!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18.0,
-                      ),
-                    ),
-                  ),
-
-                  // GridView menampilkan kartu tombol dalam tata letak kisi 3 kolom.
-                  GridView.count(
-                    primary: true,
-                    padding: const EdgeInsets.all(20),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    crossAxisCount: 3,
-                    // shrinkWrap agar ukuran kisi menyesuaikan tinggi konten anak.
-                    shrinkWrap: true,
-                    children: items.map((ItemHomepage item) {
-                      return ItemCard(item);
-                    }).toList(),
-                  ),
-                ],
+            const Padding(
+              padding: EdgeInsets.only(top: 16.0),
+              child: Text(
+                'Selamat datang di MyPortfolio Mobile!',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0),
               ),
             ),
+            GridView.count(
+              primary: false,
+              padding: const EdgeInsets.all(20),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              crossAxisCount: 3,
+              shrinkWrap: true,
+              children: items
+                  .map((item) => ItemCard(item, onTap: () => _onItemTap(item)))
+                  .toList(),
+            ),
+            // Widget tambahan: ringkasan aktivitas tombol.
+            ActivityCard(totalTaps: _totalTaps, lastPressed: _lastPressed),
           ],
         ),
       ),
@@ -116,33 +139,25 @@ class InfoCard extends StatelessWidget {
 class ItemHomepage {
   final String name;
   final IconData icon;
+  final Color color;
 
-  ItemHomepage(this.name, this.icon);
+  const ItemHomepage(this.name, this.icon, this.color);
 }
 
 class ItemCard extends StatelessWidget {
   final ItemHomepage item;
+  final VoidCallback onTap;
 
-  const ItemCard(this.item, {super.key});
+  const ItemCard(this.item, {super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      // Menggunakan warna sekunder dari skema tema aplikasi.
-      color: Theme.of(context).colorScheme.secondary,
+      color: item.color,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        // Aksi ketika kartu ditekan oleh pengguna.
-        onTap: () {
-          // Menampilkan SnackBar dengan pesan interaktif.
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text("Kamu telah menekan tombol ${item.name}!"),
-              ),
-            );
-        },
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(8),
           child: Center(
@@ -159,6 +174,29 @@ class ItemCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class ActivityCard extends StatelessWidget {
+  final int totalTaps;
+  final String? lastPressed;
+
+  const ActivityCard({super.key, required this.totalTaps, this.lastPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2.0,
+      child: ListTile(
+        leading: const Icon(Icons.touch_app),
+        title: Text('Total tombol ditekan: $totalTaps'),
+        subtitle: Text(
+          lastPressed == null
+              ? 'Belum ada tombol yang ditekan'
+              : 'Terakhir: $lastPressed',
         ),
       ),
     );
