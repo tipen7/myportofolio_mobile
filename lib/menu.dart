@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myportofolio_mobile/widgets/left_drawer.dart';
+import 'package:myportofolio_mobile/project_form.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -64,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
+      drawer: const LeftDrawer(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -157,7 +160,24 @@ class ItemCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
+        onTap: () {
+          // Memunculkan SnackBar ketika diklik
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text("Kamu telah menekan tombol ${item.name}!"),
+              ),
+            );
+
+          // Navigate ke halaman yang sesuai
+          if (item.name == "Tambah Proyek") {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProjectFormPage()),
+            );
+          }
+        },
         child: Container(
           padding: const EdgeInsets.all(8),
           child: Center(
@@ -181,6 +201,7 @@ class ItemCard extends StatelessWidget {
 }
 
 class ActivityCard extends StatelessWidget {
+  
   final int totalTaps;
   final String? lastPressed;
 
