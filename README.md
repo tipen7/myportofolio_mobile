@@ -59,3 +59,48 @@ Pakai Stateless kalau tampilannya statis (contoh: `InfoCard`, `ItemCard`). Pakai
 - **Hot restart**: menjalankan ulang aplikasi dari awal dan semua state hilang, tapi tidak perlu build ulang total.
 
 Hot reload tidak cukup (perlu hot restart) kalau menJgubah `main()`, nilai variabel global/static, inisialisasi state (`initState`), atau mengubah jenis widget (Stateless ↔ Stateful). Full restart (stop lalu run lagi) diperlukan kalau menambah dependency di `pubspec.yaml`, mengubah aset atau konfigurasi native (Android/iOS), atau menambah plugin baru.
+
+
+### Tugas 8
+1. Jelaskan perbedaan antara Navigator.push(), Navigator.pushReplacement(), dan Navigator.pop(). Metode apa yang digunakan untuk membuka formulir dari kartu aksi? Jelaskan juga bagaimana opsi Home di drawer membawa pengguna kembali ke halaman utama.
+2. Bagaimana susunan Scaffold, AppBar, dan Drawer membantu menjaga struktur halaman tetap konsisten? Berikan satu contoh penggunaan warna tema portofolio di lebih dari satu halaman.
+3. Mengapa tata letak tersebut dipilih untuk formulir? Jelaskan peran widget pengatur jarak dan widget penggulir ketika ruang layar terbatas.
+4. Apa peran GlobalKey<FormState>, validator, dan validate() saat tombol Simpan ditekan? Berikan satu contoh nilai yang ditolak oleh validasi dan jelaskan mengapa memilih jenis input atau papan ketik saja belum cukup.
+
+---
+
+### Jawaban
+
+**1. `push()` vs `pushReplacement()` vs `pop()`**
+
+- `Navigator.push()`: menaruh halaman baru di atas tumpukan (stack), halaman lama tetap ada di bawahnya. Makanya muncul tombol kembali otomatis.
+- `Navigator.pushReplacement()`: halaman saat ini diganti dengan halaman baru, jadi halaman lama hilang dari stack dan tidak bisa dikembalikan lewat tombol back.
+- `Navigator.pop()`: membuang halaman paling atas dan kembali ke halaman di bawahnya (dipakai juga untuk menutup dialog).
+
+Untuk membuka formulir dari kartu aksi saya pakai **`Navigator.push()`**, supaya pengguna bisa balik ke halaman utama dengan tombol back bawaan. Untuk opsi **Home** di drawer, saya pakai `Navigator.pushAndRemoveUntil(..., (route) => false)`: membuka `MyHomePage` sekaligus mengosongkan seluruh stack sebelumnya, jadi tidak ada halaman Home yang menumpuk dan pengguna benar-benar "reset" ke halaman utama. (Opsi Add Project dan Add Experience memakai `pushReplacement()` agar perpindahan antar-form lewat drawer tidak menumpuk halaman.)
+
+**2. Scaffold, AppBar, dan Drawer untuk konsistensi**
+
+`Scaffold` memberi kerangka standar (AppBar di atas, body di tengah, drawer di samping), jadi setiap halaman punya struktur yang sama. `AppBar` menjaga judul dan identitas visual tetap di tempat yang sama, sedangkan `LeftDrawer` dipakai ulang di semua halaman, sehingga menu navigasinya identik di mana pun pengguna berada. Satu perubahan di widget drawer langsung berlaku ke semua halaman.
+
+Contoh warna tema: `Theme.of(context).colorScheme.primary` (indigo dari `seedColor`) dipakai sebagai `backgroundColor` AppBar di halaman utama, form Add Project, dan form Add Experience, serta sebagai warna `DrawerHeader`. Jadi ganti `seedColor` sekali di `main.dart`, semua halaman ikut berubah.
+
+**3. Alasan tata letak formulir & peran spacing/scroll**
+
+Formulir saya susun sebagai satu kolom vertikal, satu input per baris. Ini paling mudah dibaca dan diisi di layar HP, serta konsisten dengan urutan pengisian (institusi → posisi → tanggal → deskripsi → tautan). Lebar form juga dibatasi (`ConstrainedBox` maks. 600) supaya tidak melebar aneh di Chrome.
+
+`SizedBox` dan `Padding` memberi jarak antar-kolom supaya tidak berdempetan dan pesan error tidak menimpa input di bawahnya. `SingleChildScrollView` penting ketika ruang terbatas, misalnya layar kecil atau keyboard muncul menutupi sebagian layar: tanpa itu, `Column` akan overflow dan tombol Simpan tidak terjangkau. Dengan scroll, semua input dan tombol tetap bisa digeser ke posisi yang terlihat (plus `keyboardDismissBehavior.onDrag` supaya keyboard tertutup saat di-scroll).
+
+**4. `GlobalKey<FormState>`, `validator`, dan `validate()`**
+
+- `GlobalKey<FormState>` adalah "pegangan" ke `Form`, sehingga di luar widget field (misalnya di tombol Simpan) kita bisa mengakses state form, termasuk memanggil `validate()` atau `reset()`.
+- `validator` adalah fungsi di tiap `TextFormField` yang mengembalikan `String?`: pesan error kalau input salah, `null` kalau valid.
+- `validate()` dipanggil saat Simpan ditekan; ia menjalankan semua validator, menampilkan pesan error di kolom yang bermasalah, dan mengembalikan `true` hanya jika semuanya lolos. Hanya kalau `true`, `AlertDialog` ringkasan ditampilkan.
+
+Contoh nilai yang ditolak: nama institusi `"   "` (cuma spasi), atau tanggal selesai yang lebih awal dari tanggal mulai, atau tautan `"abc"` yang bukan URL. Jenis input/keyboard saja tidak cukup karena itu hanya mengatur *tampilan* papan ketik, bukan isi yang dimasukkan: `keyboardType: TextInputType.url` tetap membolehkan pengguna mengetik `"abc"`, atau menempelkan teks (paste) dan input dari keyboard fisik di Chrome yang sama sekali tidak dibatasi. Validasi di `validator` adalah penjaga terakhir yang memastikan data benar-benar sesuai aturan.
+
+---
+
+### Penggunaan AI (Tugas 8)
+
+Saya memakai Claude Code sebagai asisten untuk membantu menyusun halaman `ExperienceFormPage`, validasi, navigasi drawer/kartu, dan tes widget. Seluruh kode saya tinjau, jalankan (`flutter analyze` dan `flutter test`), dan pahami sebelum dikumpulkan; jawaban reflektif di atas saya sesuaikan dengan implementasi di proyek ini.
