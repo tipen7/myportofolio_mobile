@@ -1,30 +1,81 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:myportofolio_mobile/main.dart';
+import 'package:myportofolio_mobile/screens/menu.dart';
+import 'package:myportofolio_mobile/theme/app_theme.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Kartu "Tambah Pengalaman" membuka form dan validasi bekerja', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const MyApp(webFont: false));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.tap(find.text('Tambah Pengalaman'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add Experience Form'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // Simpan dalam keadaan kosong -> muncul error, tanpa dialog.
+    await tester.tap(find.text('Simpan'));
     await tester.pump();
+    expect(find.text('Nama institusi tidak boleh kosong!'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Input hanya spasi tetap ditolak.
+    await tester.enterText(find.byType(TextFormField).at(0), '   ');
+    await tester.tap(find.text('Simpan'));
+    await tester.pump();
+    expect(find.text('Nama institusi tidak boleh kosong!'), findsOneWidget);
   });
+
+  testWidgets('Drawer membuka form pengalaman dan Home kembali ke utama', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const MyApp(webFont: false));
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add Experience'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add Experience Form'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+    expect(find.text('Selamat datang di MyPortfolio Mobile!'), findsOneWidget);
+  });
+
+  for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    testWidgets('Tidak ada overflow di layar sempit (${mode.name})', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(webFont: false),
+          darkTheme: AppTheme.dark(webFont: false),
+          themeMode: mode,
+          home: const MyHomePage(),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+
+      for (final label in ['Tambah Proyek', 'Tambah Pengalaman']) {
+        await tester.tap(find.text(label));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: label);
+        tester.state<NavigatorState>(find.byType(Navigator)).pop();
+        await tester.pumpAndSettle();
+      }
+    });
+  }
 }
