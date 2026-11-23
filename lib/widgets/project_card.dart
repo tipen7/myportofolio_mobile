@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:myportofolio_mobile/screens/menu.dart';
-import 'package:myportofolio_mobile/screens/project_form.dart';
+import 'package:myportofolio_mobile/theme/app_tokens.dart';
+import 'package:myportofolio_mobile/widgets/pressable_scale.dart';
 
+/// Kartu layanan ala Gojek: ikon dalam kotak membulat berwarna lembut,
+/// label di bawahnya, dan efek tenggelam + ripple saat ditekan.
 class ItemCard extends StatelessWidget {
   final ItemHomepage item;
   final VoidCallback onTap;
@@ -10,41 +14,51 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: item.color,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // Memunculkan SnackBar ketika diklik
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text("Kamu telah menekan tombol ${item.name}!"),
-              ),
-            );
+    final t = context.tokens;
+    final text = Theme.of(context).textTheme;
 
-          // Navigate ke halaman yang sesuai
-          if (item.name == "Tambah Proyek") {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ProjectFormPage()),
-            );
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          child: Center(
+    return Semantics(
+      button: true,
+      label: item.name,
+      child: PressableScale(
+        child: InkWell(
+          borderRadius: AppRadius.lgAll,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            // Counter & SnackBar ditangani oleh halaman pemilik kartu.
+            onTap();
+
+            // Buka halaman tujuan (jika ada); tombol kembali bawaan tersedia.
+            final page = item.page;
+            if (page != null) {
+              Navigator.push(context, MaterialPageRoute(builder: page));
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.s2),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(item.icon, color: Colors.white, size: 30.0),
-                const Padding(padding: EdgeInsets.all(3)),
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: item.color.withValues(alpha: 0.14),
+                    borderRadius: AppRadius.lgAll,
+                  ),
+                  child: Icon(item.icon, color: item.color, size: 28),
+                ),
+                const SizedBox(height: AppSpace.s2),
                 Text(
                   item.name,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.labelMedium?.copyWith(
+                    color: t.text,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),

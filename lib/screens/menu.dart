@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:myportofolio_mobile/screens/experience_form.dart';
+import 'package:myportofolio_mobile/screens/project_form.dart';
+import 'package:myportofolio_mobile/theme/app_tokens.dart';
 import 'package:myportofolio_mobile/widgets/left_drawer.dart';
 import 'package:myportofolio_mobile/widgets/project_card.dart';
 
 class MyHomePage extends StatefulWidget {
-
   const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
-  
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -16,11 +17,26 @@ class _MyHomePageState extends State<MyHomePage> {
   final String nama = "Steven";
   final String kelas = "PBP A";
 
-  // Setiap tombol memiliki warna unik: biru, hijau, dan merah.
-  final List<ItemHomepage> items = const [
-    ItemHomepage("Lihat Proyek", Icons.folder, Colors.blue),
-    ItemHomepage("Tambah Proyek", Icons.add_circle, Colors.green),
-    ItemHomepage("Logout", Icons.logout, Colors.red),
+  // Kartu yang punya `page` membuka halaman tersebut lewat Navigator.push().
+  final List<ItemHomepage> items = [
+    const ItemHomepage(
+      "Lihat Proyek",
+      Icons.folder_rounded,
+      AppPalette.blue500,
+    ),
+    ItemHomepage(
+      "Tambah Proyek",
+      Icons.add_circle_rounded,
+      AppPalette.green500,
+      page: (_) => const ProjectFormPage(),
+    ),
+    ItemHomepage(
+      "Tambah Pengalaman",
+      Icons.work_rounded,
+      AppPalette.orange500,
+      page: (_) => const ExperienceFormPage(),
+    ),
+    const ItemHomepage("Logout", Icons.logout_rounded, AppPalette.red500),
   ];
 
   // Interaktivitas tambahan: hitung total tekan & simpan tombol terakhir.
@@ -36,11 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          backgroundColor: item.color,
-          behavior: SnackBarBehavior.floating,
-          content: Text("Kamu telah menekan tombol ${item.name}!"),
-        ),
+        SnackBar(content: Text("Kamu telah menekan tombol ${item.name}!")),
       );
   }
 
@@ -53,58 +65,161 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
+    final text = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'MyPortfolio',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: text.titleLarge?.copyWith(
+            color: t.actionText,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
         actions: [
           IconButton(
             tooltip: 'Reset penghitung',
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: _resetCounter,
           ),
+          const SizedBox(width: AppSpace.s2),
         ],
       ),
-      drawer: const LeftDrawer(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                InfoCard(title: 'NPM', content: npm),
-                InfoCard(title: 'Name', content: nama),
-                InfoCard(title: 'Class', content: kelas),
-              ],
+      drawer: const LeftDrawer(current: DrawerDestination.home),
+      body: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppLayout.maxContentWidth,
             ),
-            const SizedBox(height: 16.0),
-            const Padding(
-              padding: EdgeInsets.only(top: 16.0),
-              child: Text(
-                'Selamat datang di MyPortfolio Mobile!',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpace.s4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _Hero(
+                    greeting: 'Halo, $nama',
+                    stats: [
+                      InfoCard(title: 'NPM', content: npm),
+                      InfoCard(title: 'Name', content: nama),
+                      InfoCard(title: 'Class', content: kelas),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpace.s6),
+                  const _SectionTitle('Layanan'),
+                  const SizedBox(height: AppSpace.s2),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpace.s2),
+                    decoration: BoxDecoration(
+                      color: t.surface,
+                      borderRadius: AppRadius.xlAll,
+                      border: Border.all(color: t.border),
+                      boxShadow: t.shadowSm,
+                    ),
+                    child: GridView(
+                      primary: false,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            mainAxisExtent: 116,
+                          ),
+                      children: [
+                        for (final item in items)
+                          ItemCard(item, onTap: () => _onItemTap(item)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpace.s6),
+                  const _SectionTitle('Aktivitas'),
+                  const SizedBox(height: AppSpace.s2),
+                  ActivityCard(
+                    totalTaps: _totalTaps,
+                    lastPressed: _lastPressed,
+                  ),
+                ],
               ),
             ),
-            GridView.count(
-              primary: false,
-              padding: const EdgeInsets.all(20),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              children: items
-                  .map((item) => ItemCard(item, onTap: () => _onItemTap(item)))
-                  .toList(),
-            ),
-            // Widget tambahan: ringkasan aktivitas tombol.
-            ActivityCard(totalTaps: _totalTaps, lastPressed: _lastPressed),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(label, style: Theme.of(context).textTheme.titleMedium);
+  }
+}
+
+/// Header hijau bergradien dengan kartu profil di dalamnya
+/// (mirip kartu saldo di aplikasi Gojek).
+class _Hero extends StatelessWidget {
+  const _Hero({required this.greeting, required this.stats});
+
+  final String greeting;
+  final List<Widget> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final text = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.s5),
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.xlAll,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppPalette.green500, AppPalette.green800],
+        ),
+        boxShadow: t.shadowBrand,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            greeting,
+            style: text.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpace.s1),
+          Text(
+            'Selamat datang di MyPortfolio Mobile!',
+            style: text.headlineSmall?.copyWith(color: Colors.white),
+          ),
+          const SizedBox(height: AppSpace.s4),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.s3),
+            decoration: BoxDecoration(
+              color: t.surface,
+              borderRadius: AppRadius.lgAll,
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  for (var i = 0; i < stats.length; i++) ...[
+                    if (i > 0)
+                      VerticalDivider(width: 1, thickness: 1, color: t.border),
+                    Expanded(child: stats[i]),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -118,24 +233,27 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2.0,
-      child: Container(
-        width: MediaQuery.of(context).size.width / 3.5,
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18.0,
-              ),
-            ),
-            const SizedBox(height: 8.0),
-            Text(content),
-          ],
-        ),
+    final t = context.tokens;
+    final text = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.s2),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: text.labelSmall?.copyWith(color: t.textSubtle),
+          ),
+          const SizedBox(height: AppSpace.s1),
+          Text(
+            content,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.titleSmall,
+          ),
+        ],
       ),
     );
   }
@@ -146,7 +264,10 @@ class ItemHomepage {
   final IconData icon;
   final Color color;
 
-  const ItemHomepage(this.name, this.icon, this.color);
+  /// Halaman tujuan saat kartu ditekan (null = tidak berpindah halaman).
+  final WidgetBuilder? page;
+
+  const ItemHomepage(this.name, this.icon, this.color, {this.page});
 }
 
 class ActivityCard extends StatelessWidget {
@@ -157,15 +278,48 @@ class ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
+    final text = Theme.of(context).textTheme;
+
     return Card(
-      elevation: 2.0,
-      child: ListTile(
-        leading: const Icon(Icons.touch_app),
-        title: Text('Total tombol ditekan: $totalTaps'),
-        subtitle: Text(
-          lastPressed == null
-              ? 'Belum ada tombol yang ditekan'
-              : 'Terakhir: $lastPressed',
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.s4),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: t.actionSoft,
+                borderRadius: AppRadius.mdAll,
+              ),
+              child: Icon(Icons.touch_app_rounded, color: t.actionText),
+            ),
+            const SizedBox(width: AppSpace.s4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total tombol ditekan: $totalTaps',
+                    style: text.titleSmall,
+                  ),
+                  const SizedBox(height: 2),
+                  AnimatedSwitcher(
+                    duration: AppMotion.normal,
+                    switchInCurve: AppMotion.easeOut,
+                    child: Text(
+                      lastPressed == null
+                          ? 'Belum ada tombol yang ditekan'
+                          : 'Terakhir: $lastPressed',
+                      key: ValueKey(lastPressed),
+                      style: text.bodyMedium?.copyWith(color: t.textMuted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
