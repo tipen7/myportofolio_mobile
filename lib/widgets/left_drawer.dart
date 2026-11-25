@@ -2,25 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:myportofolio_mobile/screens/experience_form.dart';
 import 'package:myportofolio_mobile/screens/menu.dart';
 import 'package:myportofolio_mobile/screens/project_form.dart';
+import 'package:myportofolio_mobile/screens/project_list_screen.dart';
+import 'package:myportofolio_mobile/services/auth_state.dart';
 import 'package:myportofolio_mobile/theme/app_tokens.dart';
+import 'package:myportofolio_mobile/widgets/auth_guard.dart';
+import 'package:provider/provider.dart';
 
 /// Tujuan di drawer; dipakai untuk menandai halaman yang sedang aktif.
-enum DrawerDestination { home, addProject, addExperience }
+enum DrawerDestination { home, projects, addProject, addExperience }
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key, this.current = DrawerDestination.home});
 
   final DrawerDestination current;
 
-  void _go(
+  Future<void> _go(
     BuildContext context,
     DrawerDestination dest,
-    Widget Function() page,
-  ) {
+    Widget Function() page, {
+    bool requiresAuth = false,
+  }) async {
     // Sudah di halaman tujuan: cukup tutup drawer.
     if (dest == current) {
       Navigator.pop(context);
       return;
+    }
+    if (requiresAuth) {
+      final ok = await ensureLoggedIn(context);
+      if (!ok || !context.mounted) return;
     }
     if (dest == DrawerDestination.home) {
       // Kosongkan stack agar Home tidak menumpuk.
@@ -41,14 +50,16 @@ class LeftDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final text = Theme.of(context).textTheme;
+    final isLoggedIn = context.watch<AuthState>().isLoggedIn;
 
     Widget item(
       IconData icon,
       IconData activeIcon,
       String label,
       DrawerDestination dest,
-      Widget Function() page,
-    ) {
+      Widget Function() page, {
+      bool requiresAuth = false,
+    }) {
       final selected = dest == current;
       return Padding(
         padding: const EdgeInsets.symmetric(
@@ -64,7 +75,7 @@ class LeftDrawer extends StatelessWidget {
               color: selected ? t.actionText : t.text,
             ),
           ),
-          onTap: () => _go(context, dest, page),
+          onTap: () => _go(context, dest, page, requiresAuth: requiresAuth),
         ),
       );
     }
@@ -138,11 +149,19 @@ class LeftDrawer extends StatelessWidget {
                   () => const MyHomePage(),
                 ),
                 item(
+                  Icons.folder_outlined,
+                  Icons.folder_rounded,
+                  'Projects',
+                  DrawerDestination.projects,
+                  () => const ProjectListScreen(),
+                ),
+                item(
                   Icons.add_circle_outline_rounded,
                   Icons.add_circle_rounded,
                   'Add Project',
                   DrawerDestination.addProject,
                   () => const ProjectFormPage(),
+                  requiresAuth: true,
                 ),
                 item(
                   Icons.work_outline_rounded,
@@ -150,6 +169,39 @@ class LeftDrawer extends StatelessWidget {
                   'Add Experience',
                   DrawerDestination.addExperience,
                   () => const ExperienceFormPage(),
+                ),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.s3,
+                    vertical: AppSpace.s1,
+                  ),
+                  child: ListTile(
+                    leading: Icon(
+                      isLoggedIn ? Icons.logout_rounded : Icons.login_rounded,
+                    ),
+                    title: Text(
+                      isLoggedIn ? 'Logout' : 'Login',
+                      style: text.titleSmall?.copyWith(color: t.text),
+                    ),
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final auth = context.read<AuthState>();
+                      final navigator = Navigator.of(context);
+                      if (isLoggedIn) {
+                        navigator.pop(); // tutup drawer
+                        await auth.logout();
+                        messenger
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            const SnackBar(content: Text('Berhasil logout.')),
+                          );
+                      } else {
+                        await ensureLoggedIn(context);
+                        if (navigator.canPop()) navigator.pop(); // tutup drawer
+                      }
+                    },
+                  ),
                 ),
               ],
             ),

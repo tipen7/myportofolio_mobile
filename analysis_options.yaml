@@ -10,7 +10,12 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  errors:
+    # Flutter > 3.47 menandai material.dart/cupertino.dart sebagai deprecated;
+    # migrasi ke material_ui/cupertino_ui belum termasuk tutorial ini.
+    deprecated_member_use: ignore
   exclude:
+    - "**/*.g.dart"
     - build/**
     - android/**
     - ios/**

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myportofolio_mobile/screens/experience_form.dart';
 import 'package:myportofolio_mobile/screens/project_form.dart';
+import 'package:myportofolio_mobile/screens/project_list_screen.dart';
 import 'package:myportofolio_mobile/theme/app_tokens.dart';
 import 'package:myportofolio_mobile/widgets/left_drawer.dart';
 import 'package:myportofolio_mobile/widgets/project_card.dart';
@@ -19,16 +20,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Kartu yang punya `page` membuka halaman tersebut lewat Navigator.push().
   final List<ItemHomepage> items = [
-    const ItemHomepage(
+    ItemHomepage(
       "Lihat Proyek",
       Icons.folder_rounded,
       AppPalette.blue500,
+      page: (_) => const ProjectListScreen(),
     ),
     ItemHomepage(
       "Tambah Proyek",
       Icons.add_circle_rounded,
       AppPalette.green500,
       page: (_) => const ProjectFormPage(),
+      requiresAuth: true,
     ),
     ItemHomepage(
       "Tambah Pengalaman",
@@ -36,7 +39,12 @@ class _MyHomePageState extends State<MyHomePage> {
       AppPalette.orange500,
       page: (_) => const ExperienceFormPage(),
     ),
-    const ItemHomepage("Logout", Icons.logout_rounded, AppPalette.red500),
+    const ItemHomepage(
+      "Logout",
+      Icons.logout_rounded,
+      AppPalette.red500,
+      isLogout: true,
+    ),
   ];
 
   // Interaktivitas tambahan: hitung total tekan & simpan tombol terakhir.
@@ -267,7 +275,20 @@ class ItemHomepage {
   /// Halaman tujuan saat kartu ditekan (null = tidak berpindah halaman).
   final WidgetBuilder? page;
 
-  const ItemHomepage(this.name, this.icon, this.color, {this.page});
+  /// Halaman tujuan hanya boleh dibuka setelah login.
+  final bool requiresAuth;
+
+  /// Kartu ini melakukan logout (bukan berpindah halaman).
+  final bool isLogout;
+
+  const ItemHomepage(
+    this.name,
+    this.icon,
+    this.color, {
+    this.page,
+    this.requiresAuth = false,
+    this.isLogout = false,
+  });
 }
 
 class ActivityCard extends StatelessWidget {

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:myportofolio_mobile/screens/menu.dart';
+import 'package:myportofolio_mobile/services/auth_state.dart';
 import 'package:myportofolio_mobile/theme/app_tokens.dart';
+import 'package:myportofolio_mobile/widgets/auth_guard.dart';
 import 'package:myportofolio_mobile/widgets/pressable_scale.dart';
+import 'package:provider/provider.dart';
 
 /// Kartu layanan ala Gojek: ikon dalam kotak membulat berwarna lembut,
 /// label di bawahnya, dan efek tenggelam + ripple saat ditekan.
@@ -23,10 +26,32 @@ class ItemCard extends StatelessWidget {
       child: PressableScale(
         child: InkWell(
           borderRadius: AppRadius.lgAll,
-          onTap: () {
+          onTap: () async {
             HapticFeedback.selectionClick();
             // Counter & SnackBar ditangani oleh halaman pemilik kartu.
             onTap();
+
+            if (item.isLogout) {
+              final auth = context.read<AuthState>();
+              final messenger = ScaffoldMessenger.of(context);
+              final wasLoggedIn = auth.isLoggedIn;
+              if (wasLoggedIn) await auth.logout();
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      wasLoggedIn ? 'Berhasil logout.' : 'Kamu belum login.',
+                    ),
+                  ),
+                );
+              return;
+            }
+
+            if (item.requiresAuth) {
+              final ok = await ensureLoggedIn(context);
+              if (!ok || !context.mounted) return;
+            }
 
             // Buka halaman tujuan (jika ada); tombol kembali bawaan tersedia.
             final page = item.page;
