@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'app_tokens.dart';
+import 'package:myportofolio_mobile/theme/app_tokens.dart';
 
 /// Merakit ThemeData dari token. Semua komponen Material di-style di sini
 /// sehingga halaman tidak perlu menimpa warna/bentuk secara manual.
@@ -122,6 +122,60 @@ abstract final class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.s4),
       ),
       dividerTheme: DividerThemeData(color: t.border, space: 1, thickness: 1),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: t.surface,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: t.actionSoft,
+        height: 68,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (s) => IconThemeData(
+            color: s.contains(WidgetState.selected)
+                ? t.actionText
+                : t.textSubtle,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (s) => text.labelSmall?.copyWith(
+            color: s.contains(WidgetState.selected)
+                ? t.actionText
+                : t.textSubtle,
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: t.surface,
+        selectedColor: t.actionSoft,
+        showCheckmark: false,
+        shape: const StadiumBorder(),
+        side: WidgetStateBorderSide.resolveWith(
+          (s) => BorderSide(
+            color: s.contains(WidgetState.selected) ? t.action : t.border,
+          ),
+        ),
+        labelStyle: text.labelMedium?.copyWith(
+          color: WidgetStateColor.resolveWith(
+            (s) =>
+                s.contains(WidgetState.selected) ? t.actionText : t.textMuted,
+          ),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: t.surface,
+        surfaceTintColor: Colors.transparent,
+        modalBarrierColor: t.overlay,
+        dragHandleColor: t.borderStrong,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: t.action,
+        foregroundColor: t.textOnAction,
+        shape: const StadiumBorder(),
+        extendedTextStyle: text.labelLarge,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: t.surface,

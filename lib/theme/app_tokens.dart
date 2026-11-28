@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-/// ============================================================================
+/// ===========================================================================
 /// DESIGN TOKENS: Gojek-inspired
 ///
 /// Tiga lapisan (mengikuti static/css/tokens.css pada proyek web):
 ///   1. Primitive : nilai mentah (AppPalette) — jangan dipakai langsung di UI.
 ///   2. Semantic  : makna/peran, beda per tema (AppSemantic, lewat context.tokens).
-///   3. Scale     : spacing, radius, motion, typography (AppSpace, AppRadius, ...).
+///   3. Scale     : spacing, radius, motion, typography (AppSpace, dst.).
 ///
-/// Aturan: widget hanya boleh memakai token semantic + scale, bukan hex/angka.
-/// ============================================================================
+/// Aturan: widget hanya memakai token semantic + scale, bukan hex/angka.
+/// ===========================================================================
 
 /// 1) PRIMITIVE — palet mentah.
 abstract final class AppPalette {
@@ -124,6 +124,16 @@ class AppSemantic extends ThemeExtension<AppSemantic> {
   final List<BoxShadow> shadowMd;
   final List<BoxShadow> shadowLg;
   final List<BoxShadow> shadowBrand;
+
+  Color get dangerStrong => AppPalette.red700;
+  Color get onBrand => Colors.white;
+
+  // Mulai dari green700 agar teks putih di atasnya tetap lolos kontras AA.
+  LinearGradient get heroGradient => const LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [AppPalette.green700, AppPalette.green800],
+  );
 
   static List<BoxShadow> _shadow(
     Color c,
