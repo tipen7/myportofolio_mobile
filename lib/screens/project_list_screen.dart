@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:myportofolio_mobile/models/project.dart';
 import 'package:myportofolio_mobile/screens/project_detail_screen.dart';
 import 'package:myportofolio_mobile/services/api_client.dart';
-import 'package:myportofolio_mobile/theme/app_tokens.dart';
+import 'package:myportofolio_mobile/widgets/app_bottom_nav.dart';
+import 'package:myportofolio_mobile/widgets/async_list_view.dart';
+import 'package:myportofolio_mobile/widgets/entry_card.dart';
+import 'package:myportofolio_mobile/widgets/filter_header.dart';
 import 'package:myportofolio_mobile/widgets/left_drawer.dart';
+import 'package:myportofolio_mobile/widgets/pill.dart';
 import 'package:provider/provider.dart';
 
 class ProjectListScreen extends StatefulWidget {
@@ -14,114 +18,71 @@ class ProjectListScreen extends StatefulWidget {
 }
 
 class _ProjectListScreenState extends State<ProjectListScreen> {
-  late Future<List<Project>> _projectsFuture;
+  late Future<List<Project>> _projects;
+  String _query = '';
+  String? _type;
 
   @override
   void initState() {
     super.initState();
-    _projectsFuture = context.read<ApiClient>().getProjects();
+    _projects = context.read<ApiClient>().getProjects();
   }
 
   Future<void> _reload() async {
+    if (!mounted) return;
     final future = context.read<ApiClient>().getProjects();
     setState(() {
-      _projectsFuture = future;
+      _projects = future;
     });
-    try {
-      await future;
-    } catch (_) {
-      // Error is rendered by the FutureBuilder.
-    }
+    await future.then<void>((_) {}, onError: (Object _) {});
   }
+
+  bool _matches(Project project) =>
+      (_type == null || project.type == _type) &&
+      project.name.toLowerCase().contains(_query.trim().toLowerCase());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Achievements: Projects')),
       drawer: const LeftDrawer(current: DrawerDestination.projects),
-      body: FutureBuilder<List<Project>>(
-        future: _projectsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Failed to load projects: ${snapshot.error}',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: _reload,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final projects = snapshot.data ?? const <Project>[];
-          if (projects.isEmpty) {
-            return RefreshIndicator(
+      bottomNavigationBar: const AppBottomNav(
+        current: DrawerDestination.projects,
+      ),
+      body: Column(
+        children: [
+          FilterHeader<String>(
+            searchHint: 'Cari nama proyek',
+            onQueryChanged: (value) => setState(() => _query = value),
+            options: Project.types,
+            selected: _type,
+            labelOf: Project.typeLabel,
+            onSelected: (type) => setState(() => _type = type),
+          ),
+          Expanded(
+            child: AsyncListView<Project>(
+              future: _projects,
               onRefresh: _reload,
-              child: const SingleChildScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                child: SizedBox(
-                  height: 400,
-                  child: Center(child: Text('No projects found.')),
-                ),
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: _reload,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: AppLayout.maxContentWidth,
-                ),
-                child: ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(AppSpace.s4),
-                  itemCount: projects.length,
-                  itemBuilder: (context, index) {
-                    final project = projects[index];
-                    return Card(
-                      child: ListTile(
-                        title: Text(project.name),
-                        subtitle: Text(
-                          '${project.techStack.join(', ')}\n${project.description}',
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        isThreeLine: true,
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                ProjectDetailScreen(project: project),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+              filter: _matches,
+              errorMessage: 'Gagal memuat proyek.',
+              emptyMessage: 'No projects found.',
+              itemBuilder: (context, project) => EntryCard(
+                imageUrl: project.image,
+                icon: Icons.folder_rounded,
+                title: project.name,
+                caption: project.techStack.join(', '),
+                description: project.description,
+                badges: [Pill(Project.typeLabel(project.type))],
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => ProjectDetailScreen(project: project),
+                  ),
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

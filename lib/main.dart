@@ -29,7 +29,6 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(webFont: webFont),
         darkTheme: AppTheme.dark(webFont: webFont),
-        themeMode: ThemeMode.system,
         home: const MyHomePage(),
       ),
     );
