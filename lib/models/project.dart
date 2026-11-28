@@ -33,5 +33,10 @@ class Project {
   @JsonKey(defaultValue: <String>[])
   final List<String> techStack;
 
+  static const List<String> types = ['personal', 'competition', 'team'];
+
+  static String typeLabel(String type) =>
+      type.isEmpty ? type : '${type[0].toUpperCase()}${type.substring(1)}';
+
   Map<String, dynamic> toJson() => _$ProjectToJson(this);
 }
