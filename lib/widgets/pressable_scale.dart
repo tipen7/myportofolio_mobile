@@ -4,7 +4,7 @@ import 'package:myportofolio_mobile/theme/app_tokens.dart';
 /// Efek "tenggelam" saat disentuh (ala kartu layanan Gojek). Tidak mencuri
 /// gesture: anak (mis. InkWell) tetap menangani tap-nya sendiri.
 class PressableScale extends StatefulWidget {
-  const PressableScale({super.key, required this.child, this.scale = 0.95});
+  const PressableScale({required this.child, super.key, this.scale = 0.95});
 
   final Widget child;
   final double scale;
