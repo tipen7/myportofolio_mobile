@@ -2,8 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
   pull_request:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,12 +20,15 @@ jobs:
       flutter_version: "3.47.9"
       setup: dart run build_runner build --delete-conflicting-outputs
       coverage_excludes: "**/*.g.dart"
-      min_coverage: 0
+      min_coverage: 85
       timeout_minutes: 15
 
   build_apk:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL || 'https://steven-dyanizha-myportofolio.pws.cs.ui.ac.id' }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -32,8 +38,9 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter build apk --release --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
+      - run: flutter build apk --release --dart-define=API_BASE_URL="$API_BASE_URL"
       - uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
