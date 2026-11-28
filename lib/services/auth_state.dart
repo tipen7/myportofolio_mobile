@@ -9,6 +9,7 @@ class AuthState extends ChangeNotifier {
   String? _token;
 
   String? get token => _token;
+
   bool get isLoggedIn => _token != null;
 
   Future<void> login(String username, String password) async {
@@ -22,11 +23,18 @@ class AuthState extends ChangeNotifier {
 
     try {
       await _apiClient.logout(token: current);
-    } on ApiException {
-      // Token is dropped locally even if the server rejects the request.
+    } on Exception catch (error) {
+      // The token is dropped locally even if the server is unreachable or
+      // rejects the request, so logging out can never get stuck.
+      debugPrint('Logout request failed: $error');
     } finally {
-      _token = null;
-      notifyListeners();
+      clearSession();
     }
+  }
+
+  void clearSession() {
+    if (_token == null) return;
+    _token = null;
+    notifyListeners();
   }
 }
